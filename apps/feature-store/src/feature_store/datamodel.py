@@ -32,3 +32,9 @@ class FeatureValues:
     feature_name: str
     entity_key: str
     values: List[FeatureValue]
+
+
+@dataobject
+@dataclass
+class FeatureValuesRequest:
+    items: List[FeatureValues]

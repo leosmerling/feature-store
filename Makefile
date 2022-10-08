@@ -14,6 +14,17 @@ dev:
 	cd apps/feature-store && \
 	pip install -e .
 
+update-api:
+	FEATURE_STORE_APP_VERSION=0.1 \
+	FEATURE_STORE_DATA_PATH=./_data \
+	FEATURE_STORE_WORK_DIR=./_work \
+	hopeit_openapi create \
+		--title="Feature Store" \
+		--description="https://github.com/leosmerling/feature-store" \
+		--api-version="v0" \
+		--config-files=ops/server/server-config-local.json,ops/config-manager/plugin-config.json,apps/feature-store/config/feature-store.json \
+		--output-file=apps/feature-store/config/openapi.json
+
 start-app:
 	docker compose up -d redis && \
 	FEATURE_STORE_APP_VERSION=0.1 \
@@ -22,7 +33,8 @@ start-app:
 	hopeit_server run \
 		--port=8020 \
 		--start-streams \
-		--config-files=ops/server/server-config-local.json,ops/config-manager/plugin-config.json,apps/feature-store/config/feature-store.json
+		--config-files=ops/server/server-config-local.json,ops/config-manager/plugin-config.json,apps/feature-store/config/feature-store.json \
+		--api-file=apps/feature-store/config/openapi.json
 
 start-ops:
 	FEATURE_STORE_APP_VERSION=0.1 \

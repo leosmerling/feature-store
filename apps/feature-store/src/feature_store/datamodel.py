@@ -10,9 +10,11 @@ class FeatureDataType(str, Enum):
     CATEGORICAL = "c"
 
 
-@dataobject
+@dataobject(event_ts="ts", partition=("feature_name", "entity_key"))
 @dataclass
 class FeatureValue:
+    feature_name: str
+    entity_key: str
     ts: datetime
     n: Optional[float] = None
     c: Optional[str] = None
@@ -28,13 +30,5 @@ class FeatureDefinition:
 
 @dataobject
 @dataclass
-class FeatureValues:
-    feature_name: str
-    entity_key: str
+class FeatureValuesBatch:
     values: List[FeatureValue]
-
-
-@dataobject
-@dataclass
-class FeatureValuesRequest:
-    items: List[FeatureValues]

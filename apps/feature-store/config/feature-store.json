@@ -42,7 +42,7 @@
             },
             "impl": "hopeit.fs_storage.events.stream_batch_storage",
             "dataobjects": [
-                "feature_store.datamodel.FeatureValues"
+                "feature_store.datamodel.FeatureValue"
             ]
         },
         "batch_storage.submit_query": {

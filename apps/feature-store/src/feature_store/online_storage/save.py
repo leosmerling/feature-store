@@ -1,9 +1,9 @@
 from hopeit.app.context import EventContext
 
-from feature_store.datamodel import FeatureValues
+from feature_store.datamodel import FeatureValue
 
 __steps__ = ["dummy"]
 
 
-def dummy(payload: FeatureValues, context: EventContext) -> None:
+def dummy(payload: FeatureValue, context: EventContext) -> None:
     pass

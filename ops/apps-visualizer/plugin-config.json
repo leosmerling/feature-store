@@ -9,7 +9,7 @@
     },
     "settings": {
         "apps_visualizer": {
-            "hosts": "${HOPEIT_APPS_VISUALIZER_HOSTS}",
+            "hosts": "${APPS_VISUALIZER_HOSTS}",
             "refresh_hosts_seconds": 60,
             "live_recent_treshold_seconds": 10,
             "live_active_treshold_seconds": 60

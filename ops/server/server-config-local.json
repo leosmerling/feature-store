@@ -6,11 +6,11 @@
     },
     "logging": {
       "log_level": "DEBUG",
-      "log_path": "${HOPEIT_FEATURE_STORE_WORK_DIR}/logs/"
+      "log_path": "${FEATURE_STORE_WORK_DIR}/logs/"
     },
     "auth": {
       "auth_passphrase": "dev-local",
-      "secrets_location": "${HOPEIT_FEATURE_STORE_WORK_DIR}/.secrets/",
+      "secrets_location": "${FEATURE_STORE_WORK_DIR}/.secrets/",
       "create_keys": true,
       "default_auth_methods": ["Unsecured"],
       "domain": "localhost"

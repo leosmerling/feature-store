@@ -1,14 +1,14 @@
 {
     "app": {
-        "name": "hopeit.feature-store",
-        "version": "${HOPEIT_FEATURE_STORE_APP_VERSION}"
+        "name": "feature-store",
+        "version": "${FEATURE_STORE_APP_VERSION}"
     },
     "plugins": [],
     "engine": {},
     "env": {},
     "settings": {
         "save_values_batch": {
-            "path": "${HOPEIT_FEATURE_STORE_DATA_PATH}/${HOPEIT_FEATURE_STORE_APP_VERSION}/{auto}",
+            "path": "${FEATURE_STORE_DATA_PATH}/${FEATURE_STORE_APP_VERSION}/{auto}",
             "partition_dateformat": "%Y/%m/%d/%H/",
             "flush_seconds": 60.0,
             "flush_max_size": 10000

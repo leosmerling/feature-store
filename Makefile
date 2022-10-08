@@ -5,6 +5,8 @@ SRC = $(wildcard **/src/*.py)
 dev:
 	export FEATURE_STORE_APP_VERSION=0.1 && \
 	export HOPEIT_ENGINE_VERSION=0.16.5 && \
+	mkdir -p _data && \
+	mkdir -p _work && \
 	pip install -U pip && \
 	pip install -U wheel && \
 	pip install -U -r ops/requirements.txt
@@ -13,10 +15,14 @@ dev:
 	pip install -e .
 
 start-app:
+	docker compose up -d redis && \
 	FEATURE_STORE_APP_VERSION=0.1 \
 	FEATURE_STORE_DATA_PATH=./_data \
 	FEATURE_STORE_WORK_DIR=./_work \
-	hopeit_server run --port=8020 --config-files=ops/server/server-config-local.json,ops/config-manager/plugin-config.json,apps/feature-store/config/feature-store.json
+	hopeit_server run \
+		--port=8020 \
+		--start-streams \
+		--config-files=ops/server/server-config-local.json,ops/config-manager/plugin-config.json,apps/feature-store/config/feature-store.json
 
 start-ops:
 	FEATURE_STORE_APP_VERSION=0.1 \

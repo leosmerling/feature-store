@@ -41,7 +41,9 @@
                 "consumer_group": "{auto}"
             },
             "impl": "hopeit.fs_storage.events.stream_batch_storage",
-            "dataobjects": []
+            "dataobjects": [
+                "feature_store.datamodel.FeatureValues"
+            ]
         },
         "batch_storage.submit_query": {
             "type": "POST",

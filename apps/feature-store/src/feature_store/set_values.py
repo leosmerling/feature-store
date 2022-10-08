@@ -5,21 +5,21 @@ from hopeit.app.context import EventContext, PostprocessHook
 from hopeit.app.events import Spawn
 from hopeit.dataobjects import dataclass, dataobject
 
-from feature_store.datamodel import FeatureValues, FeatureValuesRequest
+from feature_store.datamodel import FeatureValue, FeatureValuesBatch
 
 __steps__ = ["spawn_features"]
 
 __api__ = event_api(
     summary="Feature Store: Submit Feature Values",
-    payload=(FeatureValuesRequest, "provide `id` and `user` to create Something"),
+    payload=(FeatureValuesBatch, "Batch of `FeatureValue`s to store"),
     responses={
         200: (str, 'acknowledge'),
     }
 )
 
 
-async def spawn_features(payload: FeatureValuesRequest, context: EventContext) -> Spawn[FeatureValues]:
-    for feature_values in payload.items:
+async def spawn_features(payload: FeatureValuesBatch, context: EventContext) -> Spawn[FeatureValue]:
+    for feature_values in payload.values:
         yield feature_values
 
 

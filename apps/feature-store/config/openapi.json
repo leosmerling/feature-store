@@ -152,12 +152,12 @@
           }
         ],
         "requestBody": {
-          "description": "provide `id` and `user` to create Something",
+          "description": "Batch of `FeatureValue`s to store",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FeatureValuesRequest"
+                "$ref": "#/components/schemas/FeatureValuesBatch"
               }
             }
           }
@@ -772,12 +772,12 @@
         "x-module-name": "hopeit.config_manager",
         "description": "\n    Combined App Config and Server Status information for running apps\n    "
       },
-      "FeatureValues": {
+      "FeatureValue": {
         "type": "object",
         "required": [
           "feature_name",
           "entity_key",
-          "values"
+          "ts"
         ],
         "properties": {
           "feature_name": {
@@ -786,22 +786,6 @@
           "entity_key": {
             "type": "string"
           },
-          "values": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FeatureValue"
-            }
-          }
-        },
-        "x-module-name": "feature_store.datamodel",
-        "description": "FeatureValues(feature_name: str, entity_key: str, values: List[feature_store.datamodel.FeatureValue])"
-      },
-      "FeatureValue": {
-        "type": "object",
-        "required": [
-          "ts"
-        ],
-        "properties": {
           "ts": {
             "type": "string",
             "format": "date-time"
@@ -814,23 +798,23 @@
           }
         },
         "x-module-name": "feature_store.datamodel",
-        "description": "FeatureValue(ts: datetime.datetime, n: Optional[float] = None, c: Optional[str] = None)"
+        "description": "FeatureValue(feature_name: str, entity_key: str, ts: datetime.datetime, n: Optional[float] = None, c: Optional[str] = None)"
       },
-      "FeatureValuesRequest": {
+      "FeatureValuesBatch": {
         "type": "object",
         "required": [
-          "items"
+          "values"
         ],
         "properties": {
-          "items": {
+          "values": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FeatureValues"
+              "$ref": "#/components/schemas/FeatureValue"
             }
           }
         },
         "x-module-name": "feature_store.datamodel",
-        "description": "FeatureValuesRequest(items: List[feature_store.datamodel.FeatureValues])"
+        "description": "FeatureValuesBatch(values: List[feature_store.datamodel.FeatureValue])"
       }
     },
     "securitySchemes": {

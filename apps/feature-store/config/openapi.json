@@ -940,15 +940,11 @@
       "Job": {
         "type": "object",
         "required": [
-          "id",
-          "results_location",
+          "job_id",
           "query"
         ],
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "results_location": {
+          "job_id": {
             "type": "string"
           },
           "query": {
@@ -956,7 +952,7 @@
           }
         },
         "x-module-name": "feature_store.datamodel",
-        "description": "Job(id: str, results_location: str, query: feature_store.datamodel.Query)"
+        "description": "Job(job_id: str, query: feature_store.datamodel.Query)"
       }
     },
     "securitySchemes": {

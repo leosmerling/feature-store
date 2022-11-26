@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 from pathlib import Path
 from glob import glob
+import os
 
 import pandas as pd
 
@@ -54,8 +55,7 @@ __steps__ = [
 async def submit_query(payload: Query, context: EventContext) -> Job:
     job_id = str(uuid4())
     return Job(
-        id = job_id,
-        results_location=f"_data/{job_id}",
+        job_id=job_id,
         query=payload,
     )
 
@@ -79,10 +79,12 @@ async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartitio
     
                     for k, vs in timestamps.items():
                         yield JobPartition(
+                            job_id=job.job_id,
                             partition_key=current_partition_key,
-                            index_timestamps=vs,
+                            entity_type=field.entity_type,
                             entity_key=k,
                             feature_name=feature_name,
+                            index_timestamps=vs,
                         )
     
                     current_partition_key = partition_key
@@ -96,10 +98,12 @@ async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartitio
     
                 for k, vs in timestamps.items():
                     yield JobPartition(
+                        job_id=job.job_id,
                         partition_key=current_partition_key,
-                        index_timestamps=vs,
+                        entity_type=field.entity_type,
                         entity_key=k,
                         feature_name=feature_name,
+                        index_timestamps=vs,
                     )
             
 
@@ -113,13 +117,37 @@ async def iter_lookback_partitions(partition_key: str, max_lookback_hours: int):
         yield dt.strftime("%Y/%m/%d/%H")
 
 
-async def extract_values(df: pd.DataFrame, index_timestamps: List[Tuple[int, datetime]]) -> pd.DataFrame:
+async def extract_values(df: pd.DataFrame, partition: JobPartition) -> pd.DataFrame:
     df.set_index("ts", inplace=True)
     df.sort_index(ascending=False)
+    return pd.concat(
+        get_feature_df(df, index, ts, partition.entity_type, partition.feature_name)
+        for index, ts in partition.index_timestamps
+    )
 
-    for index, ts in index_timestamps:
-        aux_df = df.loc[df.index <= ts.isoformat()].head(1)
-        print("*** aux_df", index, ts, aux_df)
+
+def get_feature_df(df: pd.DataFrame, index:int, timestamp: datetime, entity_type: str, feature_name: str) -> pd.DataFrame:
+    feature_df = df.loc[df.index <= timestamp.isoformat()].head(1)
+    feature_df["seed.index"] = index
+    feature_df["seed.ts"] = timestamp
+    print("\n\n*** feature_df_temp\n\n", feature_df)
+    feature_df[f"feature.{feature_name}.ts"] = feature_df.index
+    feature_df[f"feature.{feature_name}.c"] = feature_df["c"] if "c" in feature_df.columns else ""
+    feature_df[f"feature.{feature_name}.n"] = feature_df["n"] if "n" in feature_df.columns else pd.NA
+    feature_df[f"entity.{entity_type}"] = feature_df["entity_key"]
+    return feature_df.set_index("seed.index")[[
+        "seed.ts",
+        f"entity.{entity_type}",
+        f"feature.{feature_name}.c",
+        f"feature.{feature_name}.n",
+        f"feature.{feature_name}.ts",
+    ]]
+
+
+def save_partition_result(df: pd.DataFrame, partition: JobPartition):
+    save_path = Path("_data/0.1/feature_store.0x1.submit_query.save.path") / partition.job_id
+    os.makedirs(save_path, exist_ok=True)
+    df.to_csv(save_path / f"{uuid4()}.csv")
 
 
 async def process_partition(partition: JobPartition, context: EventContext) -> JobPartition:
@@ -137,13 +165,10 @@ async def process_partition(partition: JobPartition, context: EventContext) -> J
                 pd.read_parquet(Path(base_path) / file)
                 for file in files
             ))
-        # df = pd.read_parquet(Path(base_path) / path).set_index("ts").sort_index(ascending=False)
             print("*** FOUND!", partition, partition_key)
-            print(df.head())
-
-            # TODO: Extract latest value x timestamp
-            await extract_values(df, partition.index_timestamps)
-
+            feature_df = await extract_values(df, partition)
+            print("*** feature_df", feature_df)
+            save_partition_result(feature_df, partition)
             break
 
     print()

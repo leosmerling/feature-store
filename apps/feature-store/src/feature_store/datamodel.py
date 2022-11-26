@@ -59,15 +59,16 @@ class Query:
 @dataobject
 @dataclass
 class Job:
-    id: str
-    results_location: str
+    job_id: str
     query: Query
 
 
 @dataobject
 @dataclass
 class JobPartition:
+    job_id: str
     partition_key: str
-    index_timestamps: List[Tuple[int, datetime]]
     feature_name: str
+    entity_type: str
     entity_key: str
+    index_timestamps: List[Tuple[int, datetime]]

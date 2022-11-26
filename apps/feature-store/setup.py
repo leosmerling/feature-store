@@ -1,9 +1,13 @@
 import setuptools
 import os
 
+version = {}
+with open("../../../version.py") as fp:
+    exec(fp.read(), version)
+
 setuptools.setup(
     name="leosmerling.feature_store",
-    version=os.getenv("FEATURE_STORE_APP_VERSION"),
+    version=version["FEATURES_STORE_APP_VERSION"]
     description="Feature Store App",
     package_dir={
         "": "src"

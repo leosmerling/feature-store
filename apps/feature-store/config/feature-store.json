@@ -40,7 +40,7 @@
                 "name": "{events.set_values.write_stream.name}",
                 "consumer_group": "{auto}"
             },
-            "impl": "hopeit.fs_storage.events.stream_batch_storage",
+            "impl": "hopeit.parquet_storage.events.stream_batch_storage",
             "dataobjects": [
                 "feature_store.datamodel.FeatureValue"
             ]

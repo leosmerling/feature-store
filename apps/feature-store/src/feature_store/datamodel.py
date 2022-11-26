@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 from hopeit.dataobjects import dataclass, dataobject
 
@@ -66,8 +66,8 @@ class Job:
 
 @dataobject
 @dataclass
-class JobItem:
-    index: int
-    ts: datetime
+class JobPartition:
+    partition_key: str
+    index_timestamps: List[Tuple[int, datetime]]
     feature_name: str
     entity_key: str

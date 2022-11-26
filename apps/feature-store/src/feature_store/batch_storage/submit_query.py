@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import uuid4
@@ -11,7 +12,7 @@ from hopeit.dataobjects import dataclass, dataobject
 from hopeit.app.events import Spawn, SHUFFLE
 from hopeit.app.api import event_api
 
-from feature_store.datamodel import Job, JobItem, Query, QueryEntity, SeedData
+from feature_store.datamodel import Job, JobPartition, Query, QueryEntity, SeedData
 
 
 __api__ = event_api(
@@ -26,9 +27,9 @@ __api__ = event_api(
 __steps__ = [
     "submit_query",
     SHUFFLE,  # <- Return response here
-    "spawn_items",
+    "spawn_partitions",
     SHUFFLE,
-    "process_item",
+    "process_partition",
 ]
 
 
@@ -59,40 +60,70 @@ async def submit_query(payload: Query, context: EventContext) -> Job:
     )
 
 
-async def spawn_items(job: Job, context: EventContext) -> Spawn[JobItem]:
-    for seed_row in job.query.seed_data:
-        for field in job.query.fields:
-            entity_key = seed_row.entity_keys[field.entity_type]
-            for feature_name in field.feature_names:
-                yield JobItem(
-                    index=seed_row.index,
-                    ts=seed_row.ts,
-                    entity_key=entity_key,
-                    feature_name=feature_name
-                )
+async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartition]:
+    sorted_data = sorted(job.query.seed_data, key=lambda x: x.ts)
 
+    for field in job.query.fields:
+    
+        for feature_name in field.feature_names:
+            seed_row = sorted_data[0]
+            current_partition_key = seed_row.ts.strftime("%Y/%m/%d/%H")
+            current_entity_key = seed_row.entity_keys[field.entity_type]
+            timestamps = defaultdict(list)
+            timestamps[current_entity_key].append((seed_row.index, seed_row.ts))
+    
+            for seed_row in sorted_data[1:]:
+                partition_key = seed_row.ts.strftime("%Y/%m/%d/%H")
+    
+                if current_partition_key != partition_key:
+    
+                    for k, vs in timestamps.items():
+                        yield JobPartition(
+                            partition_key=current_partition_key,
+                            index_timestamps=vs,
+                            entity_key=k,
+                            feature_name=feature_name,
+                        )
+    
+                    current_partition_key = partition_key
+                    timestamps.clear()
+    
+                current_entity_key = seed_row.entity_keys[field.entity_type]
+    
+                timestamps[current_entity_key].append((seed_row.index, seed_row.ts))
+        
+            if len(timestamps):
+    
+                for k, vs in timestamps.items():
+                    yield JobPartition(
+                        partition_key=current_partition_key,
+                        index_timestamps=vs,
+                        entity_key=k,
+                        feature_name=feature_name,
+                    )
+            
 
-async def process_item(item: JobItem, context: EventContext) -> JobItem:
+async def process_partition(partition: JobPartition, context: EventContext) -> JobPartition:
     # Find folders for feature_name/entity_key
     print()
-    print("*** process_item", item)
+    print("*** process_item", partition)
     
-    base_path = Path("_data/0.1/feature_store.0x1.batch_storage.save.path")
-    path = f"{item.feature_name}/{item.entity_key}/????/??/??/??/*.parquet"
-    locations = reversed(sorted(iglob(path, root_dir=base_path)))
+    # base_path = Path("_data/0.1/feature_store.0x1.batch_storage.save.path")
+    # path = f"{item.feature_name}/{item.entity_key}/????/??/??/??/*.parquet"
+    # locations = reversed(sorted(iglob(path, root_dir=base_path)))
 
-    dt_match_max = item.ts.strftime("%Y%m%d%H")
-    dt_max = item.ts.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    # dt_match_max = item.ts.strftime("%Y%m%d%H")
+    # dt_max = item.ts.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
-    for location in locations:
-        dt_match = "".join(location.split("/")[2:5])
-        print("*** dt_max", dt_max, "dt_match", dt_match, "location", location)
+    # for location in locations:
+    #     dt_match = "".join(location.split("/")[2:5])
+    #     print("*** dt_max", dt_max, "dt_match", dt_match, "location", location)
 
-        if dt_match_max >= dt_match:
-            df = pd.read_parquet(Path(base_path) / location).set_index("ts").sort_index(ascending=False)
-            df = df.loc[df.index <= dt_max].head(1)
-            print("*** FOUND!", df)
-            break
+    #     if dt_match_max >= dt_match:
+    #         df = pd.read_parquet(Path(base_path) / location).set_index("ts").sort_index(ascending=False)
+    #         df = df.loc[df.index <= dt_max].head(1)
+    #         print("*** FOUND!", df)
+    #         break
 
-    print()
-    return item
+    # print()
+    return partition

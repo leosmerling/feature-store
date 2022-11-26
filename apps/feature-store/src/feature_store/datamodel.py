@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
+from typing import Dict, Optional, List
 
 from hopeit.dataobjects import dataclass, dataobject
 
@@ -32,3 +32,42 @@ class FeatureDefinition:
 @dataclass
 class FeatureValuesBatch:
     values: List[FeatureValue]
+
+
+@dataobject
+@dataclass
+class QueryEntity:
+    entity_type: str
+    feature_names: List[str]
+
+
+@dataobject
+@dataclass
+class SeedData:
+    index: int
+    ts: datetime
+    entity_keys: Dict[str, str]  # entity_type -> entity_key
+
+
+@dataobject
+@dataclass
+class Query:
+    fields: List[QueryEntity]
+    seed_data: List[SeedData]
+
+
+@dataobject
+@dataclass
+class Job:
+    id: str
+    results_location: str
+    query: Query
+
+
+@dataobject
+@dataclass
+class JobItem:
+    index: int
+    ts: datetime
+    feature_name: str
+    entity_key: str

@@ -187,6 +187,59 @@
           "feature_store.0x1"
         ]
       }
+    },
+    "/api/feature-store/0x1/batch-storage/submit-query": {
+      "post": {
+        "summary": "Feature Store: Submit Batch Query",
+        "description": "Feature Store: Submit Batch Query",
+        "parameters": [
+          {
+            "name": "X-Track-Request-Id",
+            "in": "header",
+            "required": false,
+            "description": "Track information: Request-Id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Track-Request-Ts",
+            "in": "header",
+            "required": false,
+            "description": "Track information: Request-Ts",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Query specification",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated job information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "feature_store.0x1"
+        ]
+      }
     }
   },
   "components": {
@@ -815,6 +868,95 @@
         },
         "x-module-name": "feature_store.datamodel",
         "description": "FeatureValuesBatch(values: List[feature_store.datamodel.FeatureValue])"
+      },
+      "QueryEntity": {
+        "type": "object",
+        "required": [
+          "entity_type",
+          "feature_names"
+        ],
+        "properties": {
+          "entity_type": {
+            "type": "string"
+          },
+          "feature_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "x-module-name": "feature_store.datamodel",
+        "description": "QueryEntity(entity_type: str, feature_names: List[str])"
+      },
+      "SeedData": {
+        "type": "object",
+        "required": [
+          "index",
+          "ts",
+          "entity_keys"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "ts": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entity_keys": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "x-module-name": "feature_store.datamodel",
+        "description": "SeedData(index: int, ts: datetime.datetime, entity_keys: Dict[str, str])"
+      },
+      "Query": {
+        "type": "object",
+        "required": [
+          "fields",
+          "seed_data"
+        ],
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueryEntity"
+            }
+          },
+          "seed_data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeedData"
+            }
+          }
+        },
+        "x-module-name": "feature_store.datamodel",
+        "description": "Query(fields: List[feature_store.datamodel.QueryEntity], seed_data: List[feature_store.datamodel.SeedData])"
+      },
+      "Job": {
+        "type": "object",
+        "required": [
+          "id",
+          "results_location",
+          "query"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "results_location": {
+            "type": "string"
+          },
+          "query": {
+            "$ref": "#/components/schemas/Query"
+          }
+        },
+        "x-module-name": "feature_store.datamodel",
+        "description": "Job(id: str, results_location: str, query: feature_store.datamodel.Query)"
       }
     },
     "securitySchemes": {

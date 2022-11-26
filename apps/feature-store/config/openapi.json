@@ -240,6 +240,68 @@
           "feature_store.0x1"
         ]
       }
+    },
+    "/api/feature-store/0x1/batch-storage/merge-query-results": {
+      "post": {
+        "summary": "Feature Store: Merge Query Results",
+        "description": "Feature Store: Merge Query Results",
+        "parameters": [
+          {
+            "name": "X-Track-Request-Id",
+            "in": "header",
+            "required": false,
+            "description": "Track information: Request-Id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Track-Request-Ts",
+            "in": "header",
+            "required": false,
+            "description": "Track information: Request-Ts",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Job id",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryResults"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "batch_storage.merge_query_results"
+                  ],
+                  "properties": {
+                    "batch_storage.merge_query_results": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "batch_storage.merge_query_results string payload"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "feature_store.0x1"
+        ]
+      }
     }
   },
   "components": {
@@ -953,6 +1015,19 @@
         },
         "x-module-name": "feature_store.datamodel",
         "description": "Job(job_id: str, query: feature_store.datamodel.Query)"
+      },
+      "QueryResults": {
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string"
+          }
+        },
+        "x-module-name": "feature_store.datamodel",
+        "description": "QueryResults(job_id: str)"
       }
     },
     "securitySchemes": {

@@ -55,6 +55,11 @@ class Query:
     fields: List[QueryEntity]
     seed_data: List[SeedData]
 
+@dataobject
+@dataclass
+class QueryResults:
+    job_id: str
+
 
 @dataobject
 @dataclass

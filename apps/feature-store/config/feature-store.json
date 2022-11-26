@@ -46,10 +46,10 @@
             ]
         },
         "batch_storage.submit_query": {
-            "type": "POST",
-            "write_stream": {
-                "name": "{auto}"
-            }
+            "type": "POST"
+        },
+        "batch_storage.merge_query_results": {
+            "type": "POST"
         }
     }
 }

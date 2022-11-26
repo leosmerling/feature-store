@@ -1,9 +1,9 @@
 from collections import defaultdict
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 from pathlib import Path
-from glob import iglob
+from glob import glob
 
 import pandas as pd
 
@@ -103,27 +103,49 @@ async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartitio
                     )
             
 
+async def iter_lookback_partitions(partition_key: str, max_lookback_hours: int):
+    yield partition_key
+    current_partition = partition_key
+    dt = datetime.strptime(partition_key, "%Y/%m/%d/%H")
+    delta = timedelta(hours=1)
+    for _ in range(max_lookback_hours):
+        dt = dt - delta
+        yield dt.strftime("%Y/%m/%d/%H")
+
+
+async def extract_values(df: pd.DataFrame, index_timestamps: List[Tuple[int, datetime]]) -> pd.DataFrame:
+    df.set_index("ts", inplace=True)
+    df.sort_index(ascending=False)
+
+    for index, ts in index_timestamps:
+        aux_df = df.loc[df.index <= ts.isoformat()].head(1)
+        print("*** aux_df", index, ts, aux_df)
+
+
 async def process_partition(partition: JobPartition, context: EventContext) -> JobPartition:
     # Find folders for feature_name/entity_key
     print()
     print("*** process_item", partition)
     
-    # base_path = Path("_data/0.1/feature_store.0x1.batch_storage.save.path")
-    # path = f"{item.feature_name}/{item.entity_key}/????/??/??/??/*.parquet"
-    # locations = reversed(sorted(iglob(path, root_dir=base_path)))
+    base_path = Path("_data/0.1/feature_store.0x1.batch_storage.save.path")
 
-    # dt_match_max = item.ts.strftime("%Y%m%d%H")
-    # dt_max = item.ts.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    async for partition_key in iter_lookback_partitions(partition.partition_key, max_lookback_hours=24):
+        path = f"{partition.feature_name}/{partition.entity_key}/{partition_key}/*.parquet"
+        files = glob(path, root_dir=base_path)
+        if len(files):
+            df = pd.concat((
+                pd.read_parquet(Path(base_path) / file)
+                for file in files
+            ))
+        # df = pd.read_parquet(Path(base_path) / path).set_index("ts").sort_index(ascending=False)
+            print("*** FOUND!", partition, partition_key)
+            print(df.head())
 
-    # for location in locations:
-    #     dt_match = "".join(location.split("/")[2:5])
-    #     print("*** dt_max", dt_max, "dt_match", dt_match, "location", location)
+            # TODO: Extract latest value x timestamp
+            await extract_values(df, partition.index_timestamps)
 
-    #     if dt_match_max >= dt_match:
-    #         df = pd.read_parquet(Path(base_path) / location).set_index("ts").sort_index(ascending=False)
-    #         df = df.loc[df.index <= dt_max].head(1)
-    #         print("*** FOUND!", df)
-    #         break
+            break
 
-    # print()
+    print()
     return partition
+

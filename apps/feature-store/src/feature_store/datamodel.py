@@ -53,7 +53,7 @@ class SeedData:
 @dataclass
 class Query:
     fields: List[QueryEntity]
-    seed_data: List[SeedData]
+    seed_data_file: str
 
 @dataobject
 @dataclass
@@ -77,3 +77,9 @@ class JobPartition:
     entity_type: str
     entity_key: str
     index_timestamps: List[Tuple[int, datetime]]
+
+
+@dataobject
+@dataclass
+class SubmitQuerySettings:
+    seed_data_path: str

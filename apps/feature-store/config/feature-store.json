@@ -12,6 +12,9 @@
             "partition_dateformat": "%Y/%m/%d/%H/",
             "flush_seconds": 60.0,
             "flush_max_size": 10000
+        },
+        "batch_storage.submit_query": {
+            "seed_data_path": "${FEATURE_STORE_DATA_PATH}/${FEATURE_STORE_APP_VERSION}/{auto}"
         }
     },
     "events": {

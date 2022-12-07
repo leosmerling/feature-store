@@ -951,36 +951,11 @@
         "x-module-name": "feature_store.datamodel",
         "description": "QueryEntity(entity_type: str, feature_names: List[str])"
       },
-      "SeedData": {
-        "type": "object",
-        "required": [
-          "index",
-          "ts",
-          "entity_keys"
-        ],
-        "properties": {
-          "index": {
-            "type": "integer"
-          },
-          "ts": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "entity_keys": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        },
-        "x-module-name": "feature_store.datamodel",
-        "description": "SeedData(index: int, ts: datetime.datetime, entity_keys: Dict[str, str])"
-      },
       "Query": {
         "type": "object",
         "required": [
           "fields",
-          "seed_data"
+          "seed_data_file"
         ],
         "properties": {
           "fields": {
@@ -989,15 +964,12 @@
               "$ref": "#/components/schemas/QueryEntity"
             }
           },
-          "seed_data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SeedData"
-            }
+          "seed_data_file": {
+            "type": "string"
           }
         },
         "x-module-name": "feature_store.datamodel",
-        "description": "Query(fields: List[feature_store.datamodel.QueryEntity], seed_data: List[feature_store.datamodel.SeedData])"
+        "description": "Query(fields: List[feature_store.datamodel.QueryEntity], seed_data_file: str)"
       },
       "Job": {
         "type": "object",

@@ -1,10 +1,11 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 from uuid import uuid4
 from pathlib import Path
 from glob import glob
 import os
+import aiofiles
 
 import pandas as pd
 
@@ -13,7 +14,7 @@ from hopeit.dataobjects import dataclass, dataobject
 from hopeit.app.events import Spawn, SHUFFLE
 from hopeit.app.api import event_api
 
-from feature_store.datamodel import Job, JobPartition, Query, QueryEntity, SeedData
+from feature_store.datamodel import Job, JobPartition, Query, QueryEntity, SeedData, SubmitQuerySettings
 
 
 __api__ = event_api(
@@ -34,24 +35,6 @@ __steps__ = [
 ]
 
 
-# @dataobject
-# @dataclass
-# class QueryItem:
-#     row_id: str
-#     timestamp: datetime
-#     entity_keys: Dict[str, str] # entity_type -> entity_key
-
-##
-## row1 2022-11-24 supplier.supplier1 product.product1 supplier.supplier_delay supplier_volume product_size product_weight
-## row2 2022-11-24 supplier.supplier2 product.product1 supplier.supplier_delay supplier_volume product_size product_weight
-
-## -->
-
-## timestamp    supplier    product     delay   volume  size    weight
-## 2022-11-24   supplier1   product1    10      100     "XL"    5
-## 2022-11-24   supplier2   product1    5       500     "XL"    5
-
-
 async def submit_query(payload: Query, context: EventContext) -> Job:
     job_id = str(uuid4())
     return Job(
@@ -60,19 +43,48 @@ async def submit_query(payload: Query, context: EventContext) -> Job:
     )
 
 
+async def read_seed_data(path: Path) -> Iterator[SeedData]:
+    async with aiofiles.open(path) as f:
+        header = None
+        async for line in f:
+            if header is None:
+                header = line.strip('\n').split(',')
+                continue
+
+            tokens = line.strip('\n').split(',')
+            entity_keys = {
+                k.split('.')[-1]: v
+                for k, v in zip(header, tokens)
+                if k[0:7]=="entity."
+            }
+            print("**** entity_keys", tokens, entity_keys)
+            yield SeedData(
+                index=int(tokens[0]),
+                ts=datetime.fromisoformat(tokens[1]),
+                entity_keys=entity_keys
+            )
+
+
+
 async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartition]:
-    sorted_data = sorted(job.query.seed_data, key=lambda x: x.ts)
+    settings: SubmitQuerySettings = context.settings(datatype=SubmitQuerySettings)
+
+    seed_data_path = Path(settings.seed_data_path) / job.query.seed_data_file
 
     for field in job.query.fields:
     
         for feature_name in field.feature_names:
-            seed_row = sorted_data[0]
-            current_partition_key = seed_row.ts.strftime("%Y/%m/%d/%H")
-            current_entity_key = seed_row.entity_keys[field.entity_type]
-            timestamps = defaultdict(list)
-            timestamps[current_entity_key].append((seed_row.index, seed_row.ts))
-    
-            for seed_row in sorted_data[1:]:
+
+            init = True
+            async for seed_row in read_seed_data(seed_data_path):
+                if init:
+                    current_partition_key = seed_row.ts.strftime("%Y/%m/%d/%H")
+                    current_entity_key = seed_row.entity_keys[field.entity_type]
+                    timestamps = defaultdict(list)
+                    timestamps[current_entity_key].append((seed_row.index, seed_row.ts))
+                    init = False
+                    continue
+
                 partition_key = seed_row.ts.strftime("%Y/%m/%d/%H")
     
                 if current_partition_key != partition_key:
@@ -109,11 +121,11 @@ async def spawn_partitions(job: Job, context: EventContext) -> Spawn[JobPartitio
 
 async def iter_lookback_partitions(partition_key: str, max_lookback_hours: int):
     yield partition_key
-    current_partition = partition_key
+    # current_partition = partition_key
     dt = datetime.strptime(partition_key, "%Y/%m/%d/%H")
     delta = timedelta(hours=1)
     for _ in range(max_lookback_hours):
-        dt = dt - delta
+        dt -= delta
         yield dt.strftime("%Y/%m/%d/%H")
 
 
